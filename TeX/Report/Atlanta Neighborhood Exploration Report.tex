@@ -10,6 +10,7 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{placeins}
 
 
 \title{An Exploration of Atlanta Neighborhood Boundaries using KNN Classifiers}
@@ -72,10 +73,35 @@ The results of each API call were compiled into a single large dataframe for cle
 \caption{Latitude and Longitude Search Grid}
 \label{fig:gridmap}
 \end{figure}
+\FloatBarrier
 %--------------------------------------------
 \subsection{Data Cleaning}
 \subsubsection{Cleaning Geospatial Data}
+After tailoring the API call to return only applicable data, the geospatial data set is structured with an array of coordinates representing the boundary in each row, as shown in Figure \ref{fig:gisresults}. In order to extract this data into a useful structure, the code below iterated through the GIS results and stored the latitude and longitude coordinates along with the name of the NPU in a separate dataframe. The resulting cleaned dataframe is demonstrated in Figure \ref{fig:cleanedgeodata}. 
 
+\begin{figure}
+\includegraphics[width=0.5\textwidth]{gisresults}
+\caption{Structured Data from The City of Atlanta's GIS System}
+\label{fig:gisresults}
+\end{figure}
+
+\begin{lstlisting}[caption={Geospatial Data Cleaning Algorithm}]
+gis_df = pd.DataFrame(columns=['NPU', 'Latitude','Longitude'])
+for index, row in cleandata.iterrows():
+    coord = row['geometry.rings'][0][:]
+    name = row['attributes.NAME'][0][:]
+    for ll in coord:
+        lat = ll[1]
+        long = ll[0]
+        gis_df = gis_df.append({"NPU": name,"Latitude":lat,"Longitude": long}, ignore_index=True)
+\end{lstlisting}
+
+\begin{figure}
+\includegraphics[width=0.3\textwidth]{cleanedgeodata}
+\caption{Cleaned Geospatial Dataframe}
+\label{fig:cleanedgeodata}
+\end{figure}
+\FloatBarrier
 \subsubsection{Cleaning Location Usage Data}
 Once retrieved, the location usage data contains significantly more data than needed for this analysis. The initial output format can be seen in Table \ref{tab:fsraw}
 
@@ -116,6 +142,7 @@ def get_category_type(row):
 \end{figure}
 
 The search grid was constructed orthogonally, while the Foursquare interface assumes a circular search radius. Consequently, there are likely to be a number of locations that are captured in more than on API call. Duplicate data does not provide additional information for this analysis, and so duplicates were removed. The initial search resulted in 5901 total location listings, with only 2153 unique values. It was determined that this is a sufficient number for training and testing of a model. However, correcting the discrepancy between square and circular searches could increase the number of unique data points for future work. 
+\FloatBarrier
 %--------------------------------------------
 \subsection{Exploratory Data Analysis}
 \subsubsection{NPU Boundaries}
@@ -148,6 +175,7 @@ After assigning each venue to an NPU, it is possible to plot the number of venue
 \caption{Number of Venues in Each NPU}
 \label{fig:npucounts}
 \end{figure}
+\FloatBarrier
 %------------------------------------------------------------------------------------------------
 \section{Methodology}
 %--------------------------------------------
@@ -176,7 +204,7 @@ for k in neighbors:
     cv_scores.append(scores.mean())
 \end{lstlisting}   
 
-
+\FloatBarrier
 %------------------------------------------------------------------------------------------------
 \section{Results}
 %--------------------------------------------
@@ -192,6 +220,7 @@ The few red points likely lie along the NPU boundaries, where they might be assi
 \caption{Test Venues}
 \label{fig:preds}
 \end{figure}
+\FloatBarrier
 %------------------------------------------------------------------------------------------------
 \section{Discussion}
 Based on the score produced by sklearn, it seems that the KNN classifier does a decent job of predicting the neighborhood for a given venue. When viewed on a map, it becomes apparent that there is a systemic bias to the data. Misclassifications are overwhelmingly focused in the south-west portion of the city, while the north and east portion of the city are almost entirely correctly classified. 
